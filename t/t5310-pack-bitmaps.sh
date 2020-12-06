@@ -23,12 +23,12 @@ has_any () {
 # To ensure the logic for "maximal commits" is exercised, make
 # the repository a bit more complicated.
 #
-#    other                         master
+#    other                         second
 #      *                             *
 # (99 commits)                  (99 commits)
 #      *                             *
 #      |\                           /|
-#      | * octo-other  octo-master * |
+#      | * octo-other  octo-second * |
 #      |/|\_________  ____________/|\|
 #      | \          \/  __________/  |
 #      |  | ________/\ /             |
@@ -48,10 +48,10 @@ has_any () {
 #
 # The important part for the maximal commit algorithm is how
 # the bitmasks are extended. Assuming starting bit positions
-# for master (bit 0) and other (bit 1), the bitmasks at the
+# for second (bit 0) and other (bit 1), the bitmasks at the
 # end should be:
 #
-#      master: 1       (maximal, selected)
+#      second: 1       (maximal, selected)
 #       other: 01      (maximal, selected)
 #      (base): 11 (maximal)
 #
@@ -64,6 +64,7 @@ has_any () {
 
 test_expect_success 'setup repo with moderate-sized history' '
 	test_commit_bulk --id=file 10 &&
+	git branch -M second &&
 	git checkout -b other HEAD~5 &&
 	test_commit_bulk --id=side 10 &&
 
@@ -71,13 +72,13 @@ test_expect_success 'setup repo with moderate-sized history' '
 	# ambiguous merge-bases
 
 	git checkout -b merge-left other~2 &&
-	git merge master~2 -m "merge-left" &&
+	git merge second~2 -m "merge-left" &&
 
-	git checkout -b merge-right master~1 &&
+	git checkout -b merge-right second~1 &&
 	git merge other~1 -m "merge-right" &&
 
-	git checkout -b octo-master master &&
-	git merge merge-left merge-right -m "octopus-master" &&
+	git checkout -b octo-second second &&
+	git merge merge-left merge-right -m "octopus-second" &&
 
 	git checkout -b octo-other other &&
 	git merge merge-left merge-right -m "octopus-other" &&
@@ -85,24 +86,24 @@ test_expect_success 'setup repo with moderate-sized history' '
 	git checkout other &&
 	git merge octo-other -m "pull octopus" &&
 
-	git checkout master &&
-	git merge octo-master -m "pull octopus" &&
+	git checkout second &&
+	git merge octo-second -m "pull octopus" &&
 
 	# Remove these branches so they are not selected
 	# as bitmap tips
 	git branch -D merge-left &&
 	git branch -D merge-right &&
 	git branch -D octo-other &&
-	git branch -D octo-master &&
+	git branch -D octo-second &&
 
 	# add padding to make these merges less interesting
 	# and avoid having them selected for bitmaps
 	test_commit_bulk --id=file 100 &&
 	git checkout other &&
 	test_commit_bulk --id=side 100 &&
-	git checkout master &&
+	git checkout second &&
 
-	bitmaptip=$(git rev-parse master) &&
+	bitmaptip=$(git rev-parse second) &&
 	blob=$(echo tagged-blob | git hash-object -w --stdin) &&
 	git tag tagged-blob $blob &&
 	git config repack.writebitmaps true
@@ -141,8 +142,8 @@ rev_list_tests_head () {
 	'
 
 	test_expect_success "counting non-linear history ($state, $branch)" '
-		git rev-list --count other...master >expect &&
-		git rev-list --use-bitmap-index --count other...master >actual &&
+		git rev-list --count other...second >expect &&
+		git rev-list --use-bitmap-index --count other...second >actual &&
 		test_cmp expect actual
 	'
 
@@ -179,7 +180,7 @@ rev_list_tests_head () {
 rev_list_tests () {
 	state=$1
 
-	for branch in "master" "other"
+	for branch in "second" "other"
 	do
 		rev_list_tests_head
 	done
@@ -215,7 +216,7 @@ test_expect_success 'setup further non-bitmapped commits' '
 rev_list_tests 'partial bitmap'
 
 test_expect_success 'fetch (partial bitmap)' '
-	git --git-dir=clone.git fetch origin master:master &&
+	git --git-dir=clone.git fetch origin second:second &&
 	git rev-parse HEAD >expect &&
 	git --git-dir=clone.git rev-parse HEAD >actual &&
 	test_cmp expect actual
@@ -317,7 +318,7 @@ test_expect_success 'full repack, reusing previous bitmaps' '
 '
 
 test_expect_success 'fetch (full bitmap)' '
-	git --git-dir=clone.git fetch origin master:master &&
+	git --git-dir=clone.git fetch origin second:second &&
 	git rev-parse HEAD >expect &&
 	git --git-dir=clone.git rev-parse HEAD >actual &&
 	test_cmp expect actual
