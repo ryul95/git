@@ -2,6 +2,9 @@
 
 test_description='ask merge-recursive to merge binary files'
 
+GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME=main
+export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
+
 . ./test-lib.sh
 
 test_expect_success setup '
@@ -19,7 +22,7 @@ test_expect_success setup '
 	git ls-files -s a >E0 &&
 	git ls-files -s m | sed -e "s/ 0	/ 3	/" >E3 &&
 	test_tick &&
-	git commit -m "master adds some" &&
+	git commit -m "main adds some" &&
 
 	git checkout side &&
 	echo rezrov >>m &&
@@ -36,7 +39,7 @@ test_expect_success setup '
 test_expect_success resolve '
 	rm -f a* m* &&
 	git reset --hard anchor &&
-	test_must_fail git merge -s resolve master &&
+	test_must_fail git merge -s resolve main &&
 	git ls-files -s >current &&
 	test_cmp expect current
 '
@@ -44,7 +47,7 @@ test_expect_success resolve '
 test_expect_success recursive '
 	rm -f a* m* &&
 	git reset --hard anchor &&
-	test_must_fail git merge -s recursive master &&
+	test_must_fail git merge -s recursive main &&
 	git ls-files -s >current &&
 	test_cmp expect current
 '
