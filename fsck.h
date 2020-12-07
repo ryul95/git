@@ -6,6 +6,7 @@
 #define FSCK_ERROR 1
 #define FSCK_WARN 2
 #define FSCK_IGNORE 3
+#define FSCK_EXTRA 4
 
 struct fsck_options;
 struct object;
@@ -40,6 +41,7 @@ struct fsck_options {
 	unsigned strict:1;
 	int *msg_type;
 	struct oidset skiplist;
+	unsigned extra:1;
 	kh_oid_map_t *object_names;
 };
 
@@ -61,6 +63,15 @@ int fsck_walk(struct object *obj, void *data, struct fsck_options *options);
  */
 int fsck_object(struct object *obj, void *data, unsigned long size,
 	struct fsck_options *options);
+
+/*
+ * fsck a tag, and pass info about it back to the caller. This is
+ * exposed fsck_object() internals for git-mktag(1).
+ */
+int fsck_tag_standalone(const struct object_id *oid, const char *buffer,
+			unsigned long size, struct fsck_options *options,
+			struct object_id *tagged_oid,
+			int *tag_type);
 
 /*
  * Some fsck checks are context-dependent, and may end up queued; run this

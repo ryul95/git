@@ -3,7 +3,7 @@ git-mktag(1)
 
 NAME
 ----
-git-mktag - Creates a tag object
+git-mktag - Creates a tag object with extra validation
 
 
 SYNOPSIS
@@ -13,17 +13,27 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-Reads a tag contents on standard input and creates a tag object
-that can also be used to sign other objects.
 
-The output is the new tag's <object> identifier.
+Reads a tag contents on standard input and creates a tag object. The
+output is the new tag's <object> identifier.
+
+This command accepts a subset of what linkgit:git-hash-object[1] would
+accept with `-t tag --stdin`. I.e. both of these work:
+
+    git mktag <my-tag
+    git hash-object -t tag --stdin <my-tag
+
+The difference between the two is that mktag does the equivalent of a
+linkgit:git-fsck(1) check on its input, and furthermore disallows some
+thing linkgit:git-hash-object[1] would pass, e.g. extra headers in the
+object before the message.
 
 Tag Format
 ----------
 A tag signature file, to be fed to this command's standard input,
 has a very simple fixed format: four lines of
 
-  object <sha1>
+  object <hash>
   type <typename>
   tag <tagname>
   tagger <tagger>
@@ -33,6 +43,17 @@ by older Git may not have `tagger` line).  The message, when
 exists, is separated by a blank line from the header.  The
 message part may contain a signature that Git itself doesn't
 care about, but that can be verified with gpg.
+
+HISTORY
+-------
+
+In versions of Git before v2.30.0 the "mktag" command's validation
+logic was subtly different than that of linkgit:git-fsck[1]. It is now
+a strict superset of linkgit:git-fsck[1]'s validation logic.
+
+SEE ALSO
+--------
+linkgit:git-hash-object[1],
 
 GIT
 ---
